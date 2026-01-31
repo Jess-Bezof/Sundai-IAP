@@ -45,12 +45,14 @@ def get_notion_content(page_id):
                 text += rich_text[0]["plain_text"] + "\n"
     return text
 
-def retrieve_relevant_feedback(current_context, limit=3, threshold=0.35):
+def retrieve_relevant_feedback(current_context, limit=3, threshold=0.15):
     """Searches for past feedback relevant to the current task."""
     db = SessionLocal()
     try:
-        # 1. Embed the current context
-        query_embedding = generate_embedding(current_context)
+        # 1. Embed a STATIC query for feedback (solves asymmetry)
+        # Instead of embedding the random doc content, we ask for "rules"
+        query_embedding = generate_embedding("social media style guide rules, user preferences, and critical feedback to follow")
+        
         if not query_embedding:
             return []
         
@@ -89,13 +91,15 @@ def generate_social_post(docs):
     past_feedback = retrieve_relevant_feedback(docs)
     feedback_context = ""
     if past_feedback:
-        feedback_context = "\n\n⚠️ IMPORTANT - AVOID THESE PAST MISTAKES:\n" + "\n".join(past_feedback)
+        feedback_context = "\n\n🧠 CRITICAL USER FEEDBACK (YOU MUST OBEY THIS): \n" + "\n".join(past_feedback)
     
     # 2. Generate Prompt
     prompt = (
-        f"Based on these docs: {docs}.\n"
-        f"{feedback_context}\n"
-        "Generate a professional Mastodon post."
+        f"CONTEXT: You are a social media manager for a valuation tech brand.\n"
+        f"SOURCE MATERIAL: {docs}\n\n"
+        f"{feedback_context}\n\n"
+        "TASK: Generate a professional Mastodon post based on the source material. "
+        "You MUST incorporate the 'CRITICAL USER FEEDBACK' above. If the feedback says to be funny, be funny. If it says to avoid something, avoid it."
     )
     
     resp = None
@@ -265,3 +269,43 @@ def wait_for_telegram_approval(callback_id):
             print(f"Error checking Telegram: {e}")
         
         time.sleep(3)
+
+def get_all_scored_memories():
+    """Returns ALL memories with their current relevance score."""
+    db = SessionLocal()
+    try:
+        # Standard query for "General Rules"
+        query_embedding = generate_embedding("social media style guide rules, user preferences, and critical feedback to follow")
+        
+        if not query_embedding:
+            return []
+        
+        memories = db.query(FeedbackMemory).all()
+        
+        import numpy as np
+        def cosine_similarity(a, b):
+            return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+        
+        results = []
+        for m in memories:
+            score = 0.0
+            if m.embedding:
+                score = cosine_similarity(query_embedding, m.embedding)
+            
+            results.append({
+                "id": m.id,
+                "created_at": m.created_at.isoformat() if m.created_at else "",
+                "feedback_text": m.feedback_text,
+                "original_content": m.original_content,  # <--- Added this field
+                "score": float(score) # Convert numpy float to python float
+            })
+            
+        # Sort by score descending
+        results.sort(key=lambda x: x["score"], reverse=True)
+        return results
+        
+    except Exception as e:
+        print(f"⚠️ Scoring failed: {e}")
+        return []
+    finally:
+        db.close()

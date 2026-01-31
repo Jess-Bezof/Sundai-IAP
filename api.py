@@ -70,3 +70,14 @@ def trigger_automation(background_tasks: BackgroundTasks):
     except Exception as e:
         logger.error(f"Failed to start automation: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/memories", dependencies=[Depends(get_api_key)])
+def get_memories():
+    """Returns all memories with their current relevance scores."""
+    try:
+        from services import get_all_scored_memories
+        data = get_all_scored_memories()
+        return data
+    except Exception as e:
+        logger.error(f"Failed to fetch memories: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

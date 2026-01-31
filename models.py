@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 
 class SocialMediaPost(BaseModel):
+    reasoning: str = Field(description="Explain how you applied the feedback/instructions to this post.")
     content: str = Field(min_length=10, max_length=500)
     hashtags: list[str]
 
