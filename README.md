@@ -1,0 +1,3 @@
+# Automated Social Media Agent with RAG Memory
+
+An automated social media agent built with Python and FastAPI that orchestrates content creation from Notion to Mastodon. It features a Retrieval-Augmented Generation (RAG) memory system that stores and retrieves user feedback using vector embeddings, allowing the AI to learn preferences (e.g., tone, style) over time. The workflow includes a Telegram bot for human-in-the-loop approval and "Reject & Teach" feedback, ensuring high-quality, personalized posts before automated deployment on Google Cloud Platform.

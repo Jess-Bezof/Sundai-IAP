@@ -1,0 +1,16 @@
+[project]
+name = "day-1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mastodon-py>=2.1.4",
+    "notion-client>=2.7.0",
+    "openai>=2.15.0",
+    "pydantic>=2.12.5",
+    "python-dotenv>=1.2.1",
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "sqlalchemy>=2.0.25",
+]
